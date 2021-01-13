@@ -25,7 +25,7 @@ War3re shader files - DXBC not DXLI
 
 目前我知道的一部分文件含义
 
-景深
+景深 dof
 
 ps_5_0
 dcl_global_flags refactoringAllowed
@@ -104,7 +104,7 @@ div o0.xyz, r3.xyzx, r1.zzzz
 mov o0.w, l(1)
 ret
 
-指数雾
+指数雾 fog
 
 # DXBC chunk  0: ISGN offset 44 size 80
 # DXBC chunk  1: OSGN offset 132 size 44
@@ -190,7 +190,7 @@ add r0.x, -r0.x, l(1)
 movc o0.w, r0.y, l(0), r0.x
 mov o0.xyz, cb2[2].xyzx
 
-高斯模糊
+高斯模糊 gaussianblur
 
 ps_5_0
 dcl_global_flags refactoringAllowed
@@ -213,6 +213,8 @@ iadd r0.y, r0.y, l(1) - 卷积运算
 endloop
 mov o0.xyzw, r1.xyzw - 输出
 ret
+
+高光 bloomextraction
 
 ps_5_0
 dcl_global_flags refactoringAllowed
