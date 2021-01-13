@@ -1,0 +1,231 @@
+War3re shader files - DXBC not DXLI
+
+魔兽3重置版的shader文件是使用的是DirectX字节码，但是加入了一些自己的限制条件，例如去除了整个Resource部分，因此我们编写时要按照特殊的规则。
+
+首先，我们无法使用HLSL，我尝试过很多方法都是不行的，如果你发现了这种办法欢迎联系我或者直接push
+
+因此我们只能直接使用二进制修改器（Hexeditor）修改shader文件
+
+对于vs部分我没有仔细研究过，但我认为是不能修改的，这样会导致多边形读取出现问题。
+
+
+下面是修改的步骤：
+
+0.从SHEX开始进行修改，前面的部分不建议修改
+
+1.用fxc.exe将二进制码转化为编译字节码
+
+2.在d3d11tokenizedprogramformat.hpp文件中寻找词条的具体含义和对应位置
+
+3.修改二进制文件
+
+4.用checksum.exe算出校验和
+
+5.覆盖原本的shader文件
+
+目前我知道的一部分文件含义
+
+景深
+
+ps_5_0
+dcl_global_flags refactoringAllowed
+dcl_constant_buffer cb1[3].xyzw, immediateIndexed
+dcl_sampler sampler[0]
+dcl_sampler sampler[1]
+dcl_resource_texture2d resource[0]
+dcl_resource_texture2d resource[1]
+dcl_input_ps_siv linear noperspective v0.xy, position
+dcl_output o0.xyzw
+dcl_temps 6
+mul r0.xy, v0.xyxx, cb1[0].zwzz
+sample r0.z, r0.xyxx, resource[1].yzxw, sampler[1]
+eq r0.w, r0.z, l(0)
+movc r0.z, r0.w, l(10000), r0.z
+div r0.w, l(1, 1, 1, 1), cb1[1].z
+div r1.x, l(1, 1, 1, 1), r0.z
+add r1.x, r0.w, -r1.x
+mul r1.x, r1.x, cb1[1].w
+max r1.x, r1.x, l(-1)
+min r1.x, r1.x, l(1)
+eq r1.y, cb1[2].w, l(1)
+max r1.z, r1.x, l(0.01)
+movc r1.x, r1.y, r1.z, r1.x
+sample r2.xyz, r0.xyxx, resource[0].xyzw, sampler[0]
+dp2 r1.x, |r1.xxxx|, cb1[1].xxxx
+mov r3.xyz, r2.xyzx
+mov r1.z, l(1)
+mov r1.w, cb1[1].y
+mov r2.w, l(0)
+loop
+ge r3.w, r1.w, cb1[1].x
+breakc_nz r3.w
+sincos r4.x, r5.x, r2.w
+mov r5.y, r4.x
+mul r4.xy, r1.wwww, r5.xyxx
+mad r4.zw, r4.xxxy, cb1[0].zzzw, r0.xxxy
+sample r5.xyz, r4.zwzz, resource[0].xyzw, sampler[0]
+sample r3.w, r4.zwzz, resource[1].yzwx, sampler[1]
+eq r4.z, r3.w, l(0)
+movc r3.w, r4.z, l(10000), r3.w
+div r4.z, l(1, 1, 1, 1), r3.w
+add r4.z, r0.w, -r4.z
+mul r4.z, r4.z, cb1[1].w
+max r4.z, r4.z, l(-1)
+min r4.z, r4.z, l(1)
+max r4.w, r4.z, l(0.01)
+movc r4.z, r1.y, r4.w, r4.z
+mul r4.z, |r4.z|, cb1[1].x
+lt r3.w, r0.z, r3.w
+max r4.w, r4.z, l(0)
+min r4.w, r1.x, r4.w
+movc r3.w, r3.w, r4.w, r4.z
+div r4.xy, -r4.xyxx, r3.wwww
+dp2 r4.x, r4.xyxx, r4.xyxx
+sqrt r4.x, r4.x
+ge r4.y, r4.x, l(0)
+ge r4.x, l(1), r4.x
+and r4.x, r4.x, r4.y
+and r3.w, r3.w, r4.x
+add r4.x, r1.w, l(-0.5)
+add_sat r3.w, r3.w, -r4.x
+mad r4.x, r3.w, l(-2), l(3)
+mul r3.w, r3.w, r3.w
+mul r3.w, r3.w, r4.x
+div r4.xyz, r3.xyzx, r1.zzzz
+add r5.xyz, -r4.xyzx, r5.xyzx
+mad r4.xyz, r3.wwww, r5.xyzx, r4.xyzx
+add r3.xyz, r3.xyzx, r4.xyzx
+add r1.z, r1.z, l(1)
+div r3.w, cb1[1].y, r1.w
+add r1.w, r1.w, r3.w
+add r2.w, r2.w, l(2.39996)
+endloop
+div o0.xyz, r3.xyzx, r1.zzzz
+mov o0.w, l(1)
+ret
+
+指数雾
+
+# DXBC chunk  0: ISGN offset 44 size 80
+# DXBC chunk  1: OSGN offset 132 size 44
+# DXBC chunk  2: SHEX offset 184 size 88
+ps_5_0
+dcl_global_flags refactoringAllowed
+dcl_constant_buffer cb2[3].xyzw, immediateIndexed
+dcl_output o0.xyzw
+mov o0.xyz, cb2[2].xyzx - 无
+mov o0.w, l(0)
+ret
+
+# DXBC chunk  0: ISGN offset 44 size 80
+# DXBC chunk  1: OSGN offset 132 size 44
+# DXBC chunk  2: SHEX offset 184 size 428
+ps_5_0
+dcl_global_flags refactoringAllowed
+dcl_constant_buffer cb2[3].xyzw, immediateIndexed
+dcl_sampler sampler[0]
+dcl_resource_texture2d resource[0]
+dcl_input_ps linear v1.xy
+dcl_output o0.xyzw
+dcl_temps 1
+add r0.x, -cb2[1].x, cb2[1].y - 直线
+sample r0.y, v1.xyxx, resource[0].yxzw, sampler[0]
+add r0.z, -r0.y, cb2[1].y
+lt r0.y, l(32768), r0.y
+div_sat r0.x, r0.z, r0.x
+add r0.z, r0.x, r0.x
+mad r0.x, -r0.x, r0.x, r0.z
+add r0.x, -r0.x, l(1)
+movc o0.w, r0.y, l(0), r0.x
+mov o0.xyz, cb2[2].xyzx
+ret
+
+# DXBC chunk  0: ISGN offset 44 size 80
+# DXBC chunk  1: OSGN offset 132 size 44
+# DXBC chunk  2: SHEX offset 184 size 472
+ps_5_0
+dcl_global_flags refactoringAllowed
+dcl_constant_buffer cb2[3].xyzw, immediateIndexed
+dcl_sampler sampler[0]
+dcl_resource_texture2d resource[0]
+dcl_input_ps linear v1.xy
+dcl_output o0.xyzw
+dcl_temps 1
+sample r0.x, v1.xyxx, resource[0].xyzw, sampler[0] - 指数1
+mul r0.y, r0.x, cb2[1].z
+lt r0.x, l(32768), r0.x
+mul r0.y, r0.y, l(1.4427)
+exp r0.y, r0.y
+div r0.y, l(1, 1, 1, 1), r0.y
+min r0.y, r0.y, l(1)
+add r0.z, r0.y, r0.y
+mad r0.y, -r0.y, r0.y, r0.z
+add r0.y, -r0.y, l(1)
+movc o0.w, r0.x, l(0), r0.y
+mov o0.xyz, cb2[2].xyzx
+ret
+
+# DXBC chunk  0: ISGN offset 44 size 80
+# DXBC chunk  1: OSGN offset 132 size 44
+# DXBC chunk  2: SHEX offset 184 size 504
+ps_5_0
+dcl_global_flags refactoringAllowed
+dcl_constant_buffer cb2[3].xyzw, immediateIndexed
+dcl_sampler sampler[0]
+dcl_resource_texture2d resource[0]
+dcl_input_ps linear v1.xy
+dcl_output o0.xyzw
+dcl_temps 1
+mul r0.x, cb2[1].z, cb2[1].z - 指数2
+sample r0.y, v1.xyxx, resource[0].yxzw, sampler[0]
+mul r0.z, r0.y, r0.y
+lt r0.y, l(32768), r0.y
+mul r0.x, r0.z, r0.x
+mul r0.x, r0.x, l(1.4427)
+exp r0.x, r0.x
+div r0.x, l(1, 1, 1, 1), r0.x
+add r0.z, r0.x, r0.x
+mad r0.x, -r0.x, r0.x, r0.z
+add r0.x, -r0.x, l(1)
+movc o0.w, r0.y, l(0), r0.x
+mov o0.xyz, cb2[2].xyzx
+
+高斯模糊
+
+ps_5_0
+dcl_global_flags refactoringAllowed
+dcl_constant_buffer cb1[15].xyzw, dynamicIndexed
+dcl_sampler sampler[0]
+dcl_resource_texture2d resource[0]
+dcl_input_ps linear v1.xy
+dcl_output o0.xyzw
+dcl_temps 3
+ftoi r0.x, cb1[0].w - 整数化
+mov r1.xyzw, l(0, 0, 0, 0) - 初始化
+mov r0.y, l(0)
+loop
+ige r0.z, r0.y, r0.x
+breakc_nz r0.z
+add r0.zw, v1.xxxy, cb1[r0.y].xxxy
+sample r2.xyzw, r0.zwzz, resource[0].xyzw, sampler[0]
+mad r1.xyzw, r2.xyzw, cb1[r0.y].zzzz, r1.xyzw
+iadd r0.y, r0.y, l(1) - 卷积运算
+endloop
+mov o0.xyzw, r1.xyzw - 输出
+ret
+
+ps_5_0
+dcl_global_flags refactoringAllowed
+dcl_constant_buffer cb1[1].xyzw, immediateIndexed
+dcl_sampler sampler[0]
+dcl_resource_texture2d resource[0]
+dcl_input_ps linear v1.xy
+dcl_output o0.xyzw
+dcl_temps 2
+sample r0.xyzw, v1.xyxx, resource[0].xyzw, sampler[0]
+dp3 r1.x, r0.xyzx, l(0.3, 0.59, 0.11, 0) - 去色
+add_sat r0.xyzw, r0.xyzw, -cb1[0].xxxx 
+lt r1.x, cb1[0].x, r1.x 
+movc o0.xyzw, r1.xxxx, r0.xyzw, l(0, 0, 0, 1) - 输出
+
+ret
